@@ -66,7 +66,7 @@ type Task = {
 type RequestItem = {
   id: string;
   seniorName: string;
-  task: string;
+  tasks: string[];
   day: string;
   time: string;
   distance: string;
@@ -105,7 +105,7 @@ const initialRequests: RequestItem[] = [
   {
     id: 'req-giorgos-1',
     seniorName: 'Mr. Giorgos K.',
-    task: 'Tech Support',
+    tasks: ['Tech Support'],
     day: 'Tomorrow',
     time: '10:30 AM',
     distance: '1.2 km away',
@@ -119,7 +119,7 @@ const initialRequests: RequestItem[] = [
   {
     id: 'req-sofia-1',
     seniorName: 'Mrs. Sofia P.',
-    task: 'Groceries',
+    tasks: ['Groceries'],
     day: 'Friday',
     time: '4:00 PM',
     distance: '600m away',
@@ -133,7 +133,7 @@ const initialRequests: RequestItem[] = [
   {
     id: 'req-dimitris-1',
     seniorName: 'Mr. Dimitris M.',
-    task: 'Companionship',
+    tasks: ['Companionship'],
     day: 'Saturday',
     time: '11:00 AM',
     distance: '800m away',
@@ -147,7 +147,7 @@ const initialRequests: RequestItem[] = [
   {
     id: 'req-old-1',
     seniorName: 'Mrs. Eleni M.',
-    task: 'Companionship',
+    tasks: ['Companionship'],
     day: 'Last Tuesday',
     time: '11:00 AM',
     distance: '400m away',
@@ -170,7 +170,7 @@ export default function App() {
 
   // Senior 2-Step Form states
   const [bookingStep, setBookingStep] = useState<1 | 2>(1);
-  const [selectedTask, setSelectedTask] = useState('Doctor Escort');
+  const [selectedTasks, setSelectedTasks] = useState<string[]>(['Doctor Escort']);
   const [visitDay, setVisitDay] = useState('Today');
   const [visitTime, setVisitTime] = useState('02:30 PM');
   const [visitDescription, setVisitDescription] = useState('Need escort to Athens General Clinic for routine checkup and pharmacy pickup.');
@@ -324,7 +324,7 @@ export default function App() {
     const newReq: RequestItem = {
       id: `req-${Date.now()}`,
       seniorName: 'Mrs. Eleni M.',
-      task: selectedTask,
+      tasks: selectedTasks,
       day: visitDay,
       time: visitTime,
       distance: '400m away',
@@ -338,6 +338,7 @@ export default function App() {
     };
     setRequestsList(prev => [newReq, ...prev]);
     setRequestPosted(true);
+    setSelectedTasks([]);
     setBookingStep(1);
   };
 
@@ -361,12 +362,12 @@ export default function App() {
 
     const autoMsgSenior: Message = {
       sender: 'contact',
-      text: `Hi Mrs. Eleni! I accepted your request for ${targetReq.task} (${targetReq.day} at ${targetReq.time}). See you then!`,
+      text: `Hi Mrs. Eleni! I accepted your request for ${targetReq.tasks.join(', ')} (${targetReq.day} at ${targetReq.time}). See you then!`,
       time: getTime(),
     };
     const autoMsgAssistant: Message = {
       sender: 'me',
-      text: `Hi Mrs. Eleni! I accepted your request for ${targetReq.task} (${targetReq.day} at ${targetReq.time}). See you then!`,
+      text: `Hi Mrs. Eleni! I accepted your request for ${targetReq.tasks.join(', ')} (${targetReq.day} at ${targetReq.time}). See you then!`,
       time: getTime(),
     };
 
@@ -556,13 +557,16 @@ export default function App() {
           <div className="space-y-2.5">
             {tasks.map(task => {
               const Icon = task.icon;
-              const selected = selectedTask === task.name;
+              const selected = selectedTasks.includes(task.name);
               return (
                 <button
                   type="button"
                   key={task.name}
+                  aria-pressed={selected}
                   onClick={() => {
-                    setSelectedTask(task.name);
+                    setSelectedTasks(current => selected
+                      ? current.filter(name => name !== task.name)
+                      : [...current, task.name]);
                     setRequestPosted(false);
                   }}
                   className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition ${selected ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}
@@ -583,7 +587,8 @@ export default function App() {
           <button
             type="button"
             onClick={() => setBookingStep(2)}
-            className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-800 py-4 font-bold text-white shadow-lg shadow-blue-900/15 transition hover:bg-blue-900 active:scale-[0.99] ${largeFont ? 'text-base' : 'text-sm'}`}
+            disabled={selectedTasks.length === 0}
+            className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-800 py-4 font-bold text-white shadow-lg shadow-blue-900/15 transition hover:bg-blue-900 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 ${largeFont ? 'text-base' : 'text-sm'}`}
           >
             <span>Find Student</span>
             <ChevronRight className="h-5 w-5" />
@@ -607,7 +612,7 @@ export default function App() {
 
           <div className="rounded-xl bg-blue-50/70 border border-blue-100 p-3 flex items-center justify-between">
             <span className="text-xs text-blue-900">Selected Service:</span>
-            <span className="text-xs font-bold text-blue-800 bg-white px-2.5 py-1 rounded-lg border border-blue-200">{selectedTask}</span>
+            <span className="text-xs font-bold text-blue-800 bg-white px-2.5 py-1 rounded-lg border border-blue-200">{selectedTasks.join(', ')}</span>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-4 shadow-sm">
@@ -731,7 +736,7 @@ export default function App() {
           upcomingEleni.map(b => (
             <div key={b.id} className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-blue-800 uppercase tracking-wide">{b.task}</span>
+                <span className="text-xs font-bold text-blue-800 uppercase tracking-wide">{b.tasks.join(', ')}</span>
                 <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
                   b.status === 'on_the_way'
                     ? 'bg-blue-600 text-white animate-pulse'
@@ -776,7 +781,7 @@ export default function App() {
           {pastEleni.map(b => (
             <div key={b.id} className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-800">{b.task}</p>
+                <p className="text-xs font-bold text-slate-800">{b.tasks.join(', ')}</p>
                 <p className="mt-0.5 text-[11px] text-slate-500">{b.day} · Assisted by {b.volunteer}</p>
               </div>
               <div className="flex items-center gap-1">
@@ -826,7 +831,7 @@ export default function App() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">{visit.seniorName}</h3>
-                  <p className="text-xs font-medium text-blue-800">{visit.task}</p>
+                  <p className="text-xs font-medium text-blue-800">{visit.tasks.join(', ')}</p>
                 </div>
                 <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
                   visit.status === 'on_the_way' ? 'bg-blue-600 text-white' : 'bg-emerald-100 text-emerald-800'
@@ -881,7 +886,7 @@ export default function App() {
           {alexPastVisits.map(b => (
             <div key={b.id} className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-800">{b.seniorName} · {b.task}</p>
+                <p className="text-xs font-bold text-slate-800">{b.seniorName} · {b.tasks.join(', ')}</p>
                 <p className="mt-0.5 text-[11px] text-slate-500">{b.day} · Completed</p>
               </div>
               <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
@@ -944,7 +949,7 @@ export default function App() {
                       </span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-xs font-medium text-blue-800">{request.task}</p>
+                  <p className="mt-0.5 text-xs font-medium text-blue-800">{request.tasks.join(', ')}</p>
                 </div>
               </div>
 
@@ -1303,7 +1308,7 @@ export default function App() {
                       </span>
                       <div>
                         <h3 className="text-sm font-bold text-slate-900">{selectedDetailRequest.seniorName}</h3>
-                        <p className="text-xs text-blue-700 font-semibold">{selectedDetailRequest.task}</p>
+                        <p className="text-xs text-blue-700 font-semibold">{selectedDetailRequest.tasks.join(', ')}</p>
                       </div>
                     </div>
                     <button
